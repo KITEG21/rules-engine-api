@@ -61,17 +61,10 @@ func (h *Handler) CreateRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defBytes, _ := json.Marshal(req.Definition)
-
-	var desc pgtype.Text
-	if req.Description != "" {
-		desc = pgtype.Text{String: req.Description, Valid: true}
-	}
-
 	result, err := h.queries.CreateRule(r.Context(), store.CreateRuleParams{
 		Name:        req.Name,
-		Description: desc,
-		Definition:  defBytes,
+		Description: h.toPgText(req.Description),
+		Definition:  h.toDefinitionBytes(req.Definition),
 	})
 	if err != nil {
 		h.error(w, "failed to create rule: "+err.Error(), http.StatusInternalServerError)
@@ -120,18 +113,11 @@ func (h *Handler) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defBytes, _ := json.Marshal(req.Definition)
-
-	var desc pgtype.Text
-	if req.Description != "" {
-		desc = pgtype.Text{String: req.Description, Valid: true}
-	}
-
 	result, err := h.queries.UpdateRule(r.Context(), store.UpdateRuleParams{
 		ID:          id,
 		Name:        req.Name,
-		Description: desc,
-		Definition:  defBytes,
+		Description: h.toPgText(req.Description),
+		Definition:  h.toDefinitionBytes(req.Definition),
 	})
 	if err != nil {
 		h.error(w, "failed to update rule: "+err.Error(), http.StatusInternalServerError)
@@ -211,6 +197,18 @@ func (h *Handler) validateDefinition(def any) error {
 	defBytes, _ := json.Marshal(def)
 	_, err := h.parser.Parse(defBytes)
 	return err
+}
+
+func (h *Handler) toPgText(s string) pgtype.Text {
+	if s == "" {
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{String: s, Valid: true}
+}
+
+func (h *Handler) toDefinitionBytes(def any) []byte {
+	b, _ := json.Marshal(def)
+	return b
 }
 
 func (h *Handler) ruleToResponse(rule store.Rule) dto.RuleResponse {
