@@ -5,16 +5,15 @@
 package store
 
 import (
-	"database/sql"
-	"encoding/json"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Rule struct {
-	ID          int64           `json:"id"`
-	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
-	Definition  json.RawMessage `json:"definition"`
-	IsActive    sql.NullBool    `json:"is_active"`
-	CreatedAt   sql.NullTime    `json:"created_at"`
-	UpdatedAt   sql.NullTime    `json:"updated_at"`
+	ID          int64            `json:"id"`
+	Name        string           `json:"name"`
+	Description pgtype.Text      `json:"description"`
+	Definition  []byte           `json:"definition"`
+	IsActive    pgtype.Bool      `json:"is_active"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 }

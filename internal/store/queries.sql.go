@@ -7,8 +7,8 @@ package store
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createRule = `-- name: CreateRule :one
@@ -18,13 +18,13 @@ RETURNING id, name, description, definition, is_active, created_at, updated_at
 `
 
 type CreateRuleParams struct {
-	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
-	Definition  json.RawMessage `json:"definition"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+	Definition  []byte      `json:"definition"`
 }
 
 func (q *Queries) CreateRule(ctx context.Context, arg CreateRuleParams) (Rule, error) {
-	row := q.db.QueryRowContext(ctx, createRule, arg.Name, arg.Description, arg.Definition)
+	row := q.db.QueryRow(ctx, createRule, arg.Name, arg.Description, arg.Definition)
 	var i Rule
 	err := row.Scan(
 		&i.ID,
@@ -43,7 +43,7 @@ DELETE FROM rules WHERE id = $1
 `
 
 func (q *Queries) DeleteRule(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteRule, id)
+	_, err := q.db.Exec(ctx, deleteRule, id)
 	return err
 }
 
@@ -54,7 +54,7 @@ WHERE id = $1
 `
 
 func (q *Queries) GetRule(ctx context.Context, id int64) (Rule, error) {
-	row := q.db.QueryRowContext(ctx, getRule, id)
+	row := q.db.QueryRow(ctx, getRule, id)
 	var i Rule
 	err := row.Scan(
 		&i.ID,
@@ -76,7 +76,7 @@ ORDER BY name
 `
 
 func (q *Queries) ListActiveRules(ctx context.Context) ([]Rule, error) {
-	rows, err := q.db.QueryContext(ctx, listActiveRules)
+	rows, err := q.db.Query(ctx, listActiveRules)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +97,6 @@ func (q *Queries) ListActiveRules(ctx context.Context) ([]Rule, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -114,14 +111,14 @@ RETURNING id, name, description, definition, is_active, created_at, updated_at
 `
 
 type UpdateRuleParams struct {
-	ID          int64           `json:"id"`
-	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
-	Definition  json.RawMessage `json:"definition"`
+	ID          int64       `json:"id"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+	Definition  []byte      `json:"definition"`
 }
 
 func (q *Queries) UpdateRule(ctx context.Context, arg UpdateRuleParams) (Rule, error) {
-	row := q.db.QueryRowContext(ctx, updateRule,
+	row := q.db.QueryRow(ctx, updateRule,
 		arg.ID,
 		arg.Name,
 		arg.Description,

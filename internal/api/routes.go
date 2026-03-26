@@ -1,15 +1,17 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
+	"rules_engine_api/internal/rules"
 	"rules_engine_api/internal/store"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // SetupRoutes configures all API routes
@@ -29,6 +31,7 @@ func RulesRoutes(queries *store.Queries) chi.Router {
 	r.Put("/{id}", UpdateRule(queries))
 	r.Delete("/{id}", DeleteRule(queries))
 
+	r.Post("/evaluate", EvaluateRules(queries))
 	return r
 }
 
@@ -63,10 +66,29 @@ func CreateRule(queries *store.Queries) http.HandlerFunc {
 			return
 		}
 
+		name, ok := req["name"].(string)
+		if !ok || name == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "name is required and must be a string"})
+			return
+		}
+
+		var description pgtype.Text
+		if desc, ok := req["description"].(string); ok && desc != "" {
+			description = pgtype.Text{String: desc, Valid: true}
+		}
+
+		defBytes, err := parseDefinition(req["definition"])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		params := store.CreateRuleParams{
-			Name:        req["name"].(string),
-			Description: sql.NullString{String: req["description"].(string), Valid: true},
-			Definition:  json.RawMessage(req["definition"].(string)),
+			Name:        name,
+			Description: description,
+			Definition:  defBytes,
 		}
 
 		result, err := queries.CreateRule(r.Context(), params)
@@ -126,11 +148,30 @@ func UpdateRule(queries *store.Queries) http.HandlerFunc {
 			return
 		}
 
+		name, ok := req["name"].(string)
+		if !ok || name == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "name is required and must be a string"})
+			return
+		}
+
+		var description pgtype.Text
+		if desc, ok := req["description"].(string); ok && desc != "" {
+			description = pgtype.Text{String: desc, Valid: true}
+		}
+
+		defBytes, err := parseDefinition(req["definition"])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		params := store.UpdateRuleParams{
 			ID:          id,
-			Name:        req["name"].(string),
-			Description: sql.NullString{String: req["description"].(string), Valid: true},
-			Definition:  json.RawMessage(req["definition"].(string)),
+			Name:        name,
+			Description: description,
+			Definition:  defBytes,
 		}
 
 		result, err := queries.UpdateRule(r.Context(), params)
@@ -167,5 +208,71 @@ func DeleteRule(queries *store.Queries) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"message": "Rule deleted successfully"})
+	}
+}
+
+func EvaluateRules(queries *store.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Data    map[string]interface{} `json:"data"`
+			RuleIDs []int64                `json:"ruleIds"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		evaluator := rules.NewEvaluator()
+		parser := rules.NewParser()
+		results := []rules.EvaluationResult{}
+
+		for _, id := range req.RuleIDs {
+			rule, err := queries.GetRule(r.Context(), id)
+			if err != nil {
+				results = append(results, rules.EvaluationResult{
+					RuleID: fmt.Sprintf("%d", id),
+					Error:  err.Error(),
+				})
+				continue
+			}
+
+			node, err := parser.Parse(rule.Definition)
+			if err != nil {
+				results = append(results, rules.EvaluationResult{
+					RuleID: fmt.Sprintf("%d", id),
+					Error:  err.Error(),
+				})
+				continue
+			}
+
+			result, err := evaluator.Evaluate(node, req.Data)
+			if err != nil {
+				results = append(results, rules.EvaluationResult{
+					RuleID: fmt.Sprintf("%d", id),
+					Error:  err.Error(),
+				})
+				continue
+			}
+
+			result.RuleID = fmt.Sprintf("%d", id)
+			results = append(results, *result)
+		}
+
+		json.NewEncoder(w).Encode(map[string]interface{}{"results": results})
+	}
+}
+
+func parseDefinition(def interface{}) ([]byte, error) {
+	if def == nil {
+		return nil, fmt.Errorf("definition is required")
+	}
+
+	switch v := def.(type) {
+	case string:
+		return []byte(v), nil
+	case map[string]interface{}:
+		return json.Marshal(v)
+	default:
+		return nil, fmt.Errorf("definition must be a JSON object or string")
 	}
 }

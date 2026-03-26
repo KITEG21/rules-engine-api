@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -40,13 +41,13 @@ func main() {
 		log.Fatalf("migration failed: %v", err)
 	}
 
-	dbConn, err := sql.Open("pgx", dsn)
+	dbConn, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
 		log.Fatalf("failed to open db: %v", err)
 	}
-	defer dbConn.Close()
+	defer dbConn.Close(context.Background())
 
-	if err := dbConn.Ping(); err != nil {
+	if err := dbConn.Ping(context.Background()); err != nil {
 		log.Fatalf("failed to ping db: %v", err)
 	}
 
