@@ -6,10 +6,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"rules_engine_api/internal/api"
 	"rules_engine_api/internal/config"
 	"rules_engine_api/internal/migrate"
 	"rules_engine_api/internal/store"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -45,7 +49,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open db: %v", err)
 	}
-	defer dbConn.Close(context.Background())
 
 	if err := dbConn.Ping(context.Background()); err != nil {
 		log.Fatalf("failed to ping db: %v", err)
@@ -62,5 +65,37 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%d", cfg.App.Host, cfg.App.Port)
 	log.Printf("Starting server on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, r))
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen error: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Attempt graceful server shutdown
+	if err := srv.Shutdown(ctxShutdown); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	// Close database connection
+	if err := dbConn.Close(ctxShutdown); err != nil {
+		log.Printf("Error closing database connection: %v", err)
+	}
+
+	log.Println("Server exiting")
 }
