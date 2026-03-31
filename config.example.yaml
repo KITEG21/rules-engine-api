@@ -8,3 +8,9 @@ database:
 app:
   host: "localhost"
   port: 8080
+
+ai:
+  api_key: "your-gemini-api-key"
+  base_url: ""
+  model: "your-gemini-model-example: gemini-3-flash-preview"
+  timeout: 30

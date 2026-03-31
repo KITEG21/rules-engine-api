@@ -386,7 +386,70 @@ app:
 | `DB_NAME` | Database name |
 | `APP_HOST` | Server host |
 | `APP_PORT` | Server port |
+| `AI_API_KEY` | AI provider API key (for natural-language rule translation) |
+| `AI_BASE_URL` | Optional AI base endpoint |
+| `AI_MODEL` | AI model identifier (e.g., gemini-3-flash-preview) |
+
+## AI Natural-Language Rule Translation
+
+The API can accept rule definitions in natural language when AI is configured:
+
+- `POST /api/v1/rules` with `definition` as string.
+- The `internal/api/handler.go` converts plain text into AST using `internal/ai/client.go`.
+- The AI client uses `config.yaml` values through `cmd/server/main.go`.
+- If no AI key/model or translation fails, request returns 400 with a descriptive error (e.g. "failed to translate natural language definition: ...").
+
+Example:
+
+```json
+{
+  "name": "Adult in US",
+  "description": "Check user is adult in US",
+  "definition": "User is 18 or older and located in the United States"
+}
+```
+
+## SHOWCASE / Project Summary
+
+### Short Description
+
+A RESTful API that evaluates configurable business rules (defined in JSON/YAML) against real-time data payloads. Used for dynamic pricing, eligibility checks, validation workflows, and policy enforcement.
+
+### Supported Flows
+
+- Dynamic discount/pricing engines
+- User eligibility verification
+- Input validation pipelines
+- Policy enforcement
+- Workflow automation
+
+### Architecture (high-level)
+
+- `cmd/server` bootstraps config, database migration, and API routes
+- `internal/api` handles request parsing, validation, and rule CRUD/evaluate APIs
+- `internal/rules` parses and evaluates rule AST definitions
+- `internal/store` contains sqlc-generated persistence logic to PostgreSQL
+- `internal/config` loads configuration with Viper (config file + env)
+- `internal/ai` translates natural language rules to AST JSON via GenAI
+
+### Rule Evaluation
+
+Rules are stored as JSON definition (`definition` field) and parsed into AST nodes:
+
+- `logic` (`AND` / `OR`)
+- `conditions` array of nested nodes
+- leaf nodes with `field`, `operator`, `value`
+
+Evaluation returns `matched` boolean and optional `value`.
+
+### Error responses
+
+- 400: validation or translate error
+- 404: rule not found
+- 500: internal server error
 
 ## License
+
+MIT
 
 MIT

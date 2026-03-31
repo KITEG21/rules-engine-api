@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"rules_engine_api/internal/ai"
 	"rules_engine_api/internal/api"
 	"rules_engine_api/internal/config"
 	"rules_engine_api/internal/migrate"
@@ -56,12 +57,25 @@ func main() {
 
 	queries := store.New(dbConn)
 
+	// Initialize AI client from config file (allows user to send natural language or AST)
+	aiCfg := ai.Config{
+		APIKey:  cfg.AI.APIKey,
+		BaseURL: cfg.AI.BaseURL,
+		Model:   cfg.AI.Model,
+		Timeout: cfg.AI.Timeout,
+	}
+	aiClient := ai.NewClient(aiCfg)
+	if aiClient != nil && aiClient.InitError() != nil {
+		log.Printf("WARNING: AI client init error: %v", aiClient.InitError())
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Register all API routes
-	api.SetupRoutes(r, queries)
+	// Register all API routes (pass ai client so handlers can translate NL -> AST when needed)
+	// Note: update api.SetupRoutes signature to accept ai client (r, queries, aiClient)
+	api.SetupRoutes(r, queries, aiClient)
 
 	addr := fmt.Sprintf("%s:%d", cfg.App.Host, cfg.App.Port)
 	log.Printf("Starting server on %s", addr)

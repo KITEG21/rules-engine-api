@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	App      AppConfig      `mapstructure:"app"`
+	AI       AIConfig       `mapstructure:"ai"`
 }
 
 type DatabaseConfig struct {
@@ -24,6 +25,13 @@ type AppConfig struct {
 	Port int    `mapstructure:"port"`
 }
 
+type AIConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+	Model   string `mapstructure:"model"`
+	Timeout int    `mapstructure:"timeout"`
+}
+
 func Load() *Config {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -34,6 +42,11 @@ func Load() *Config {
 	viper.SetDefault("app.host", "0.0.0.0")
 	viper.SetDefault("app.port", 8080)
 	viper.SetDefault("database.port", 5432)
+
+	// AI (LLM) defaults
+	viper.SetDefault("ai.base_url", "")
+	viper.SetDefault("ai.model", "")
+	viper.SetDefault("ai.timeout", 30)
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("WARNING: config file not found, using defaults: %v", err)

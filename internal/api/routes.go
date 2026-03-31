@@ -1,13 +1,14 @@
 package api
 
 import (
+	"rules_engine_api/internal/ai"
 	"rules_engine_api/internal/store"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func SetupRoutes(r chi.Router, queries *store.Queries) {
-	h := NewHandler(queries)
+func SetupRoutes(r chi.Router, queries *store.Queries, aiClient *ai.Client) {
+	h := NewHandler(queries, aiClient)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Mount("/rules", RulesRoutes(h))
