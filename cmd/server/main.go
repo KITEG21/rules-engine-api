@@ -24,8 +24,11 @@ import (
 
 func main() {
 	cfg := config.Load()
+	log.Printf("DB config: host=%q port=%d user=%q pwd=%q db=%q, app=%s:%d",
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name,
+		cfg.App.Host, cfg.App.Port)
 
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
 		cfg.Database.Host,
 		cfg.Database.Port,
 		cfg.Database.User,
@@ -34,7 +37,7 @@ func main() {
 	)
 
 	passwordEscaped := url.QueryEscape(cfg.Database.Password)
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=require",
 		cfg.Database.User,
 		passwordEscaped,
 		cfg.Database.Host,
