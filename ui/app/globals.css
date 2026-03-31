@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Fondos - Azulado elegante */
+  --bg-primary: #0B0F14;
+  --bg-secondary: #111827;
+  --bg-elevated: #161C24;
+  --bg-tertiary: #1a202c;
+  
+  /* Texto - Sin blanco puro */
+  --text-primary: #E6EAF0;
+  --text-secondary: #A1AAB6;
+  --text-muted: #6B7280;
+  
+  /* Color principal - Indigo profundo */
+  --accent: #4F46E5;
+  --accent-soft: #6366F1;
+  --accent-hover: #4338CA;
+  
+  /* Acento secundario - Cyan suave */
+  --accent-2: #22D3EE;
+  
+  /* Estados */
+  --success: #16A34A;
+  --error: #DC2626;
+  --warning: #D97706;
+  
+  /* Lógica */
+  --and-color: #3B82F6;
+  --or-color: #A855F7;
+  
+  /* Bordes y fondos derivados */
+  --card-bg: var(--bg-secondary);
+  --card-border: rgba(255,255,255,0.06);
+  --code-bg: #020617;
+  --input-border: rgba(255,255,255,0.08);
+  --input-border-focus: var(--accent);
+  
+  /* Escala tipográfica */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-smooth: antialiased;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Code blocks */
+.code-block,
+pre,
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--code-bg);
+  border-radius: 12px;
+  padding: 16px;
+  color: #e5e7eb;
+  font-size: 13px;
+}
+
+/* Inputs */
+input,
+textarea {
+  background: var(--bg-elevated);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Botones */
+button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: 10px;
+  color: var(--text-primary);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--text-primary);
+  padding: 10px 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+/* Botón secundario */
+button.secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 10px 16px;
+}
+
+button.secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Links y estados */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-soft);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-success {
+  background: rgba(22, 163, 74, 0.1);
+  color: #22C55E;
+}
+
+.badge-error {
+  background: rgba(220, 38, 38, 0.1);
+  color: #EF4444;
+}
+
+/* Header */
+header {
+  border-bottom: 1px solid var(--card-border);
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(10px);
+}
+

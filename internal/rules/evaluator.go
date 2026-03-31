@@ -92,9 +92,24 @@ func (e *Evaluator) evaluateCondition(node *Node, data map[string]interface{}) (
 		return false, err
 	}
 
-	operator := strings.ToLower(node.Operator)
+	op := strings.TrimSpace(strings.ToLower(node.Operator))
+	switch op {
+	case "==", "=", "eq":
+		op = "eq"
+	case "!=", "<>", "neq", "not_equals":
+		op = "neq"
+	case ">":
+		op = "gt"
+	case ">=":
+		op = "gte"
+	case "<":
+		op = "lt"
+	case "<=":
+		op = "lte"
 
-	switch operator {
+	}
+
+	switch op {
 	case "eq", "equals":
 		return reflect.DeepEqual(fieldValue, node.Value), nil
 
