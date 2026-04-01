@@ -1,6 +1,7 @@
 # Rules Engine API
 
 A RESTful API for evaluating configurable rules in JSON/YAML format against real-time data. Useful for discount systems, validations, eligibility checks, and business logic enforcement.
+<img width="1282" height="747" alt="image" src="https://github.com/user-attachments/assets/939788ad-9ac3-4473-96e1-dc50f9bba19f" />
 
 ## Features
 
